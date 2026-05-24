@@ -79,6 +79,7 @@
   let currentLanguage = getInitialLanguage();
   let motionInitialized = false;
   let revealObserver = null;
+  let particleSystemStarted = false;
 
   function getInitialLanguage() {
     const params = new URLSearchParams(window.location.search);
@@ -369,6 +370,171 @@
     document.querySelectorAll(".reveal").forEach((node) => revealObserver.observe(node));
   }
 
+  function initTouchParticles() {
+    if (particleSystemStarted || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    const canvas = document.getElementById("touch-particles");
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext("2d");
+    const particles = [];
+    const palette = ["#e1b45d", "#f7e6be", "#3c8b78", "#842f2e"];
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+    let lastTouch = null;
+    let animationFrame = null;
+
+    function resize() {
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * pixelRatio);
+      canvas.height = Math.floor(height * pixelRatio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    function spawn(x, y, amount, force) {
+      const cappedAmount = Math.min(amount, 18);
+      for (let index = 0; index < cappedAmount; index += 1) {
+        const angle = (Math.PI * 2 * index) / cappedAmount + Math.random() * 0.7;
+        const speed = (1.2 + Math.random() * 3.2) * force;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - Math.random() * 0.7,
+          life: 1,
+          decay: 0.012 + Math.random() * 0.018,
+          size: 2 + Math.random() * 4.2,
+          spin: Math.random() * Math.PI,
+          spinSpeed: -0.08 + Math.random() * 0.16,
+          color: palette[Math.floor(Math.random() * palette.length)]
+        });
+      }
+
+      if (particles.length > 180) {
+        particles.splice(0, particles.length - 180);
+      }
+
+      if (!animationFrame) {
+        animationFrame = requestAnimationFrame(draw);
+      }
+    }
+
+    function drawOrnamentDot(particle) {
+      context.save();
+      context.translate(particle.x, particle.y);
+      context.rotate(particle.spin);
+      context.globalAlpha = Math.max(0, particle.life);
+      context.strokeStyle = particle.color;
+      context.fillStyle = particle.color;
+      context.lineWidth = 1.2;
+
+      const size = particle.size;
+      context.beginPath();
+      context.moveTo(0, -size);
+      context.lineTo(size, 0);
+      context.lineTo(0, size);
+      context.lineTo(-size, 0);
+      context.closePath();
+      context.stroke();
+
+      context.beginPath();
+      context.arc(0, 0, size * 0.28, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function draw() {
+      context.clearRect(0, 0, width, height);
+
+      for (let index = particles.length - 1; index >= 0; index -= 1) {
+        const particle = particles[index];
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.vx *= 0.982;
+        particle.vy = particle.vy * 0.982 + 0.018;
+        particle.spin += particle.spinSpeed;
+        particle.life -= particle.decay;
+
+        if (particle.life <= 0 || particle.x < -40 || particle.x > width + 40 || particle.y < -40 || particle.y > height + 40) {
+          particles.splice(index, 1);
+        } else {
+          drawOrnamentDot(particle);
+        }
+      }
+
+      if (particles.length) {
+        animationFrame = requestAnimationFrame(draw);
+      } else {
+        animationFrame = null;
+      }
+    }
+
+    function touchPoint(event) {
+      const touch = event.touches && event.touches[0] ? event.touches[0] : event.changedTouches && event.changedTouches[0];
+      if (!touch) {
+        return null;
+      }
+      return { x: touch.clientX, y: touch.clientY };
+    }
+
+    function handleTouchStart(event) {
+      const point = touchPoint(event);
+      if (!point) {
+        return;
+      }
+
+      lastTouch = { ...point, time: performance.now() };
+      spawn(point.x, point.y, 12, 0.86);
+    }
+
+    function handleTouchMove(event) {
+      const point = touchPoint(event);
+      if (!point || !lastTouch) {
+        return;
+      }
+
+      const dx = point.x - lastTouch.x;
+      const dy = point.y - lastTouch.y;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > 14) {
+        const force = Math.min(2.2, 0.65 + distance / 72);
+        spawn(point.x, point.y, 7, force);
+        lastTouch = { ...point, time: performance.now() };
+      }
+    }
+
+    function handleTouchEnd(event) {
+      const point = touchPoint(event);
+      if (!point) {
+        lastTouch = null;
+        return;
+      }
+
+      const elapsed = lastTouch ? Math.max(1, performance.now() - lastTouch.time) : 1;
+      const distance = lastTouch ? Math.hypot(point.x - lastTouch.x, point.y - lastTouch.y) : 0;
+      const force = Math.min(2.6, 1 + distance / elapsed);
+      spawn(point.x, point.y, 16, force);
+      lastTouch = null;
+    }
+
+    resize();
+    window.addEventListener("resize", resize, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    particleSystemStarted = true;
+  }
+
   function renderPage() {
     syncStaticText();
 
@@ -381,6 +547,7 @@
     }
 
     initMotion();
+    initTouchParticles();
   }
 
   bindLanguageSwitch();
