@@ -1,0 +1,8 @@
+node_modules/
+*.log
+tools/
+package.json
+package-lock.json
+server.js
+assets/*.jpg
+assets/file.enc

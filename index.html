@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="kk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Жанғазы Алымұлы</title>
+    <meta name="description" content="Жанғазы Алымұлының шығармашылық портфолиосы.">
+    <link rel="stylesheet" href="assets/css/styles.css">
+  </head>
+  <body data-page="index">
+    <header class="site-header">
+      <a class="brand" href="index.html" data-i18n-aria="home" aria-label="Басты бет">
+        <img class="brand__logo" src="assets/images/logo.jpg" alt="">
+        <span data-artist-name>Жанғазы Алымұлы</span>
+      </a>
+      <div class="header-actions">
+        <nav class="site-nav" data-i18n-aria="navigation" aria-label="Навигация">
+          <a href="index.html" aria-current="page" data-i18n="navWorks">Жұмыстар</a>
+        </nav>
+        <div class="language-switch" data-i18n-aria="language" aria-label="Тіл">
+          <button type="button" data-lang="kk">Қаз</button>
+          <button type="button" data-lang="ru">Рус</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="gallery-lead" id="featured-work"></section>
+
+      <section class="section">
+        <div class="section__head">
+          <div>
+            <p class="eyebrow" data-i18n="collection">Жинақ</p>
+            <h1 data-i18n="collectionTitle">Таңдамалы жұмыстар</h1>
+          </div>
+        </div>
+        <div class="art-grid" id="artwork-list"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span data-artist-name>Жанғазы Алымұлы</span>
+      <span data-i18n="footerCatalog">Суретшінің портфолиосы</span>
+    </footer>
+
+    <script src="assets/js/artworks.js"></script>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
